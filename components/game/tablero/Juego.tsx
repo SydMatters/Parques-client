@@ -66,10 +66,10 @@ const prisiones: Record<CanonicalColor, { x: number; y: number }[]> = {
 };
 
 // Mapea fila/columna lógica (fila 0..3, col 0..23) a coordenadas SVG
-// Reubica cada fila lógica en su cuadrante visual:
-// 0=verde (abajo izq), 1=azul (arriba izq), 2=amarillo (abajo der), 3=rojo (arriba der)
 const mapToCoords = (fila: number, columna: number) => {
-  const rowMap = [3, 0, 2, 1]; // fila lógica -> fila visual (0=arriba)
+  // fila lógica -> fila visual (0=arriba). Queremos: azul arriba izq (fila lógica 1),
+  // rojo arriba der (fila lógica 3), verde abajo izq (fila lógica 0), amarillo abajo der (fila lógica 2)
+  const rowMap = [2, 0, 3, 1];
   const displayRow = rowMap[fila] ?? fila;
   const baseX = 150;
   const baseY = 150;
