@@ -89,7 +89,8 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
     : null;
   const allInJail = jugadorActual ? jugadorActual.tokens.every((t) => t.in_jail) : false;
   const attemptsLimitReached = allInJail && attemptsInTurn >= 3;
-  const canRoll = isMyTurn && connected && gameState?.status === "running" && !attemptsLimitReached;
+  // No bloqueamos el botón por intentos; el backend valida y pasa turno según reglas.
+  const canRoll = isMyTurn && connected && gameState?.status === "running";
 
   const jugadores: Player[] = useMemo(() => {
     if (gameState?.state.players?.length) {
