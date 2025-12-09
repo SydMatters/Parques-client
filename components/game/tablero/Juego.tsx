@@ -64,19 +64,20 @@ const prisiones: Record<CanonicalColor, { x: number; y: number }[]> = {
 
 // Mapea fila/columna del tablero lógico a coordenadas SVG
 // Tablero dibujado de 150 a 650 (500px). 24 columnas, 4 filas.
-// Reubica cada color en su fila visual correspondiente:
-// verde -> fila visual 3 (abajo izq), azul -> 0 (arriba izq), amarillo -> 2 (abajo der), rojo -> 1 (arriba der)
+// Simplificado: alineamos cada color a una banda horizontal fija para que no invada celdas seguras.
 const mapToCoords = (fila: number, columna: number) => {
-  const rowMap = [3, 0, 2, 1];
-  const displayRow = rowMap[fila] ?? fila;
-  const baseX = 150;
-  const baseY = 150;
-  const cellX = 500 / 24;
-  const cellY = 500 / 4;
-  return {
-    x: baseX + columna * cellX + cellX / 2,
-    y: baseY + displayRow * cellY + cellY / 2,
+  // filas visuales por color: verde (abajo), azul (arriba), amarillo (abajo), rojo (arriba)
+  const rowY: Record<number, number> = {
+    0: 585, // verde
+    1: 215, // azul
+    2: 540, // amarillo
+    3: 185, // rojo
   };
+  const y = rowY[fila] ?? 400;
+  const baseX = 160; // un poco de margen para centrar en camino
+  const cellX = 500 / 24;
+  const x = baseX + columna * cellX;
+  return { x, y };
 };
 
 export function Juego({ nombres, turno, gameState, onFichaSeleccionada }: JuegoProps) {
