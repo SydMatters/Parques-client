@@ -66,15 +66,18 @@ const prisiones: Record<CanonicalColor, { x: number; y: number }[]> = {
 };
 
 // Mapea fila/columna lógica (fila 0..3, col 0..23) a coordenadas SVG
-// NO se rota ni permuta nada: misma convención que el backend.
+// Reubica cada fila lógica en su cuadrante visual:
+// 0=verde (abajo izq), 1=azul (arriba izq), 2=amarillo (abajo der), 3=rojo (arriba der)
 const mapToCoords = (fila: number, columna: number) => {
+  const rowMap = [3, 0, 2, 1]; // fila lógica -> fila visual (0=arriba)
+  const displayRow = rowMap[fila] ?? fila;
   const baseX = 150;
   const baseY = 150;
   const cellX = 500 / 24;
   const cellY = 500 / 4;
   return {
     x: baseX + columna * cellX + cellX / 2,
-    y: baseY + fila * cellY + cellY / 2,
+    y: baseY + displayRow * cellY + cellY / 2,
   };
 };
 
