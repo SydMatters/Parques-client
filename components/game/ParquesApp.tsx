@@ -52,8 +52,8 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
   const [turno, setTurno] = useState(0);
   const [fichaInfo, setFichaInfo] = useState<FichaInfo | null>(null);
   const [alertMessage, setAlertMessage] = useState("");
-  const consecutiveDoublesRef = useRef<number>(0);
-  const attemptsRef = useRef<number>(0);
+  const [consecutiveDoubles, setConsecutiveDoubles] = useState(0);
+  const [attemptsInTurn, setAttemptsInTurn] = useState(0);
   const lastTurnPlayerRef = useRef<string>("");
   const [avisoInfo] = useState<{
     tipo: "info" | "alerta" | "comida";
@@ -137,8 +137,8 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
       // Reset counters when cambia de jugador
       if (lastTurnPlayerRef.current !== state.state.turn) {
         lastTurnPlayerRef.current = state.state.turn;
-        consecutiveDoublesRef.current = 0;
-        attemptsRef.current = 0;
+        setConsecutiveDoubles(0);
+        setAttemptsInTurn(0);
       }
       const idx = state.state.players.findIndex((p) => p.name === state.state.turn);
       setTurno(idx >= 0 ? idx : 0);
@@ -146,16 +146,12 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
     if (state.state.last_roll && state.state.last_roll.length === 2) {
       setDadoValores([state.state.last_roll[0], state.state.last_roll[1]]);
       const rollKey = state.state.last_roll.join("-");
-      // track doubles/attempts locally to ayudar en UI
-      const isDouble = state.state.last_roll[0] === state.state.last_roll[1];
-      attemptsRef.current += 1;
-      if (isDouble) {
-        consecutiveDoublesRef.current += 1;
-      } else {
-        consecutiveDoublesRef.current = 0;
-      }
       if (rollKey !== lastRollRef.current) {
         lastRollRef.current = rollKey;
+        // track doubles/attempts locally to ayudar en UI solo si es nueva tirada
+        const isDouble = state.state.last_roll[0] === state.state.last_roll[1];
+        setAttemptsInTurn((prev) => prev + 1);
+        setConsecutiveDoubles((prev) => (isDouble ? prev + 1 : 0));
         setDiceModalOpen(true);
         setTimeout(() => setDiceModalOpen(false), 800);
       }
@@ -367,10 +363,10 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
                       ? (() => {
                           const jugador = gameState?.state.players.find((p) => p.name === loginData?.username);
                           const enCarcel = jugador ? jugador.tokens.every((t) => t.in_jail) : false;
-                          const intentosRestantes = enCarcel ? Math.max(0, 3 - attemptsRef.current) : null;
-                          if (consecutiveDoublesRef.current >= 2) return "Cuidado: otro doble enviará tu ficha más adelantada a la cárcel";
+                          const intentosRestantes = enCarcel ? Math.max(0, 3 - attemptsInTurn) : null;
+                          if (consecutiveDoubles >= 2) return "Cuidado: otro doble enviará tu ficha más adelantada a la cárcel";
                           if (enCarcel && intentosRestantes !== null) return `Intentos para salir: ${intentosRestantes}/3`;
-                          if (consecutiveDoublesRef.current === 1) return "Sacaste doble, tienes otro lanzamiento";
+                          if (consecutiveDoubles === 1) return "Sacaste doble, tienes otro lanzamiento";
                           return "Es tu turno";
                         })()
                       : gameState?.state.turn
