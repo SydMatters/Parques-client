@@ -45,10 +45,10 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
   const [dadoValores, setDadoValores] = useState<[number | null, number | null]>([1, 1]);
   const [diceModalOpen, setDiceModalOpen] = useState(false);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
-  const [turnModalOpen, setTurnModalOpen] = useState(false);
   const [turnoCompletadoModalOpen, setTurnoCompletadoModalOpen] = useState(false);
   const [avisoModalOpen, setAvisoModalOpen] = useState(false);
   const [alertModalOpen, setAlertModalOpen] = useState(false);
+  const [turnModalPlayer, setTurnModalPlayer] = useState<Player | null>(null);
   const [turno, setTurno] = useState(0);
   const [fichaInfo, setFichaInfo] = useState<FichaInfo | null>(null);
   const [alertMessage, setAlertMessage] = useState("");
@@ -139,6 +139,19 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
         lastTurnPlayerRef.current = state.state.turn;
         setConsecutiveDoubles(0);
         setAttemptsInTurn(0);
+        const idx = state.state.players.findIndex((p) => p.name === state.state.turn);
+        if (idx >= 0) {
+          const p = state.state.players[idx];
+          const mapped = mapColor(p.color);
+          setTurnModalPlayer({
+            nombre: p.name,
+            color: mapped.hex,
+            colorName: mapped.label,
+            icon: mapped.icon,
+            estado: "Jugando",
+          });
+          setTimeout(() => setTurnModalPlayer(null), 1400);
+        }
       }
       const idx = state.state.players.findIndex((p) => p.name === state.state.turn);
       setTurno(idx >= 0 ? idx : 0);
@@ -258,8 +271,6 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
   const handleSiguienteJugador = () => {
     setTurnoCompletadoModalOpen(false);
     setAvisoModalOpen(false);
-    setTurnModalOpen(true);
-    setTimeout(() => setTurnModalOpen(false), 1500);
     setFichaInfo(null);
   };
 
@@ -389,7 +400,7 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
         <ConfirmModal mensaje={`¿Mover ficha ${fichaInfo.id + 1} (${fichaInfo.colorName})?`} fichaInfo={fichaInfo} onConfirm={handleConfirmMovimiento} onCancel={() => setConfirmModalOpen(false)} />
       )}
       {turnoCompletadoModalOpen && <TurnoCompletadoModal jugadorActual={jugadores[turno]} onSiguienteJugador={handleSiguienteJugador} onCerrar={handleCerrarTurnoCompletado} />}
-      {turnModalOpen && <TurnModal nombre={jugadores[turno]?.nombre} colorName={jugadores[turno]?.colorName} color={jugadores[turno]?.color} />}
+      {turnModalPlayer && <TurnModal nombre={turnModalPlayer.nombre} colorName={turnModalPlayer.colorName} color={turnModalPlayer.color} />}
       {avisoModalOpen && <ModalAviso tipo={avisoInfo.tipo} titulo={avisoInfo.titulo} mensaje={avisoInfo.mensaje} jugador={avisoInfo.jugador || undefined} fichaComida={avisoInfo.fichaComida || undefined} onClose={handleCerrarAviso} />}
       {alertModalOpen && <AlertModal mensaje={alertMessage} onClose={handleCerrarAlerta} />}
       {startModalOpen && <StartGameModal players={jugadores.map((j) => j.nombre)} />}
