@@ -18,7 +18,6 @@ const normalizeColor = (name?: string): CanonicalColor => {
   if (n === "azul" || n === "blue") return "blue";
   if (n === "amarillo" || n === "yellow") return "yellow";
   if (n === "rojo" || n === "red") return "red";
-  // por defecto, verde
   return "green";
 };
 
@@ -30,30 +29,34 @@ const colorHex: Record<CanonicalColor, string> = {
   red: "#FF0000",
 };
 
+// Fila lógica “asociada” a cada color para la salida por defecto
+const colorRow: Record<CanonicalColor, number> = {
+  green: 3,   // carril inferior
+  blue: 0,    // carril superior
+  yellow: 2,  // carril inferior lado derecho
+  red: 1,     // carril superior lado derecho
+};
+
 // Coordenadas centrales de las cárceles dentro de cada cuadrante de color
 const prisiones: Record<CanonicalColor, { x: number; y: number }[]> = {
-  // Verde (abajo izquierda) cuadrante 150-290 x 510-650
   green: [
     { x: 180, y: 540 },
     { x: 225, y: 540 },
     { x: 180, y: 585 },
     { x: 225, y: 585 },
   ],
-  // Azul (arriba izquierda) cuadrante 150-290 x 150-290
   blue: [
     { x: 180, y: 180 },
     { x: 225, y: 180 },
     { x: 180, y: 225 },
     { x: 225, y: 225 },
   ],
-  // Amarillo (abajo derecha) cuadrante 510-650 x 510-650
   yellow: [
     { x: 540, y: 540 },
     { x: 585, y: 540 },
     { x: 540, y: 585 },
     { x: 585, y: 585 },
   ],
-  // Rojo (arriba derecha) cuadrante 510-650 x 150-290
   red: [
     { x: 540, y: 180 },
     { x: 585, y: 180 },
@@ -62,22 +65,17 @@ const prisiones: Record<CanonicalColor, { x: number; y: number }[]> = {
   ],
 };
 
-// Mapea fila/columna del tablero lógico a coordenadas SVG
-// Tablero dibujado de 150 a 650 (500px). 24 columnas, 4 filas.
-// Simplificado: alineamos cada color a una banda horizontal fija para que no invada celdas seguras.
+// Mapea fila/columna lógica (fila 0..3, col 0..23) a coordenadas SVG
+// NO se rota ni permuta nada: misma convención que el backend.
 const mapToCoords = (fila: number, columna: number) => {
-  // filas visuales por color: verde (abajo), azul (arriba), amarillo (abajo), rojo (arriba)
-  const rowY: Record<number, number> = {
-    0: 585, // verde
-    1: 215, // azul
-    2: 540, // amarillo
-    3: 185, // rojo
-  };
-  const y = rowY[fila] ?? 400;
-  const baseX = 160; // un poco de margen para centrar en camino
+  const baseX = 150;
+  const baseY = 150;
   const cellX = 500 / 24;
-  const x = baseX + columna * cellX;
-  return { x, y };
+  const cellY = 500 / 4;
+  return {
+    x: baseX + columna * cellX + cellX / 2,
+    y: baseY + fila * cellY + cellY / 2,
+  };
 };
 
 export function Juego({ nombres, turno, gameState, onFichaSeleccionada }: JuegoProps) {
@@ -90,18 +88,17 @@ export function Juego({ nombres, turno, gameState, onFichaSeleccionada }: JuegoP
       const jailSlots = prisiones[colorKey];
 
       p.tokens.forEach((t) => {
-        // index global = jugador * 4 + id de ficha (lo sigues usando en los modales)
         const index = pIdx * 4 + t.id;
 
         if (t.in_goal) {
-          // Fichas en la meta (las coloco cerca del centro, pequeño offset por jugador/ficha)
+          // Fichas en la meta
           fichas[index] = {
             x: 380 + pIdx * 8,
             y: 380 + t.id * 8,
             color,
           };
         } else if (t.in_jail) {
-          // Fichas en la cárcel, según color real
+          // Fichas en la cárcel
           const pos = jailSlots?.[t.id];
           fichas[index] = {
             x: pos?.x ?? 50,
@@ -109,12 +106,15 @@ export function Juego({ nombres, turno, gameState, onFichaSeleccionada }: JuegoP
             color,
           };
         } else if (t.x !== null && t.y !== null) {
-          // Fichas en el camino (coordenadas lógicas que vienen del backend)
-          const pos = mapToCoords(t.x, t.y);
+          // Backend: x = columna (0..23), y = fila (0..3)
+          const pos = mapToCoords(t.y, t.x);
           fichas[index] = { x: pos.x, y: pos.y, color };
         } else {
-          // Estado inconsistente: no en cárcel, no en meta y sin coords;
-          // mejor no dibujar nada antes que pintarla en una salida equivocada.
+          // Ficha ya salió pero no tiene coords aún: mostrarla en su salida
+          const fila = colorRow[colorKey];
+          const columnaSalida = 4; // ajusta por color si quieres afinar
+          const pos = mapToCoords(fila, columnaSalida);
+          fichas[index] = { x: pos.x, y: pos.y, color };
         }
       });
     });
