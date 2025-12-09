@@ -1,51 +1,68 @@
+import type { BackendGameState } from "../types";
 import { Tablero } from "./Tablero";
 
 type JuegoProps = {
   nombres: string[];
   turno: number;
+  gameState: BackendGameState | null;
   onFichaSeleccionada: (index: number) => void;
 };
 
-export function Juego({ nombres, turno, onFichaSeleccionada }: JuegoProps) {
-  const colores = ["#0000FF", "#FF0000", "#00AA00", "#FFFF00"];
+const colorHex = ["#00AA00", "#0000FF", "#FFFF00", "#FF0000"];
 
-  const prisiones: Record<number, { x: number; y: number }[]> = {
-    0: [
-      { x: 192.5, y: 192.5 },
-      { x: 227.5, y: 192.5 },
-      { x: 192.5, y: 227.5 },
-      { x: 227.5, y: 227.5 },
-    ],
-    1: [
-      { x: 552.5, y: 192.5 },
-      { x: 587.5, y: 192.5 },
-      { x: 552.5, y: 227.5 },
-      { x: 587.5, y: 227.5 },
-    ],
-    2: [
-      { x: 192.5, y: 552.5 },
-      { x: 227.5, y: 552.5 },
-      { x: 192.5, y: 587.5 },
-      { x: 227.5, y: 587.5 },
-    ],
-    3: [
-      { x: 552.5, y: 552.5 },
-      { x: 587.5, y: 552.5 },
-      { x: 552.5, y: 587.5 },
-      { x: 587.5, y: 587.5 },
-    ],
-  };
+const prisiones: Record<number, { x: number; y: number }[]> = {
+  0: [
+    { x: 192.5, y: 192.5 },
+    { x: 227.5, y: 192.5 },
+    { x: 192.5, y: 227.5 },
+    { x: 227.5, y: 227.5 },
+  ],
+  1: [
+    { x: 552.5, y: 192.5 },
+    { x: 587.5, y: 192.5 },
+    { x: 552.5, y: 227.5 },
+    { x: 587.5, y: 227.5 },
+  ],
+  2: [
+    { x: 192.5, y: 552.5 },
+    { x: 227.5, y: 552.5 },
+    { x: 192.5, y: 587.5 },
+    { x: 227.5, y: 587.5 },
+  ],
+  3: [
+    { x: 552.5, y: 552.5 },
+    { x: 587.5, y: 552.5 },
+    { x: 552.5, y: 587.5 },
+    { x: 587.5, y: 587.5 },
+  ],
+};
 
-  const fichas = [];
-  for (let j = 0; j < 4; j++) {
-    for (let f = 0; f < 4; f++) {
-      const pos = prisiones[j][f];
-      fichas.push({
-        x: pos.x,
-        y: pos.y,
-        color: colores[j],
+// Mapea fila/columna del tablero lógico a coordenadas SVG sencillas
+const mapToCoords = (row: number, col: number) => {
+  const baseX = 120;
+  const baseY = 120;
+  const cell = 18;
+  return { x: baseX + col * cell, y: baseY + row * cell };
+};
+
+export function Juego({ nombres, turno, gameState, onFichaSeleccionada }: JuegoProps) {
+  const fichas: { x: number; y: number; color: string }[] = [];
+
+  if (gameState?.state?.players?.length) {
+    gameState.state.players.forEach((p, pIdx) => {
+      p.tokens.forEach((t) => {
+        const index = pIdx * 4 + t.id;
+        if (t.in_goal) {
+          fichas[index] = { x: 380 + pIdx * 8, y: 380 + t.id * 8, color: colorHex[pIdx] };
+        } else if (t.in_jail) {
+          const pos = prisiones[pIdx]?.[t.id];
+          fichas[index] = { x: pos?.x ?? 50, y: pos?.y ?? 50, color: colorHex[pIdx] };
+        } else if (t.x !== null && t.y !== null) {
+          const pos = mapToCoords(t.x, t.y);
+          fichas[index] = { x: pos.x, y: pos.y, color: colorHex[pIdx] };
+        }
       });
-    }
+    });
   }
 
   return (

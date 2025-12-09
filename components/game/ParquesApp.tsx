@@ -92,14 +92,23 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
 
   const jugadores: Player[] = useMemo(() => {
     if (gameState?.state.players?.length) {
+      const status = gameState.status;
       return gameState.state.players.map((p) => {
         const mapped = mapColor(p.color);
+        let estado = "Pendiente";
+        if (status === "running") {
+          estado = gameState.state.turn === p.name ? "Jugando" : "En espera";
+        } else if (status === "waiting") {
+          estado = "Esperando inicio";
+        } else if (status === "finished") {
+          estado = "Finalizado";
+        }
         return {
           nombre: p.name,
           color: mapped.hex,
           colorName: mapped.label,
           icon: mapped.icon,
-          estado: "Jugando",
+          estado,
         };
       });
     }
@@ -352,11 +361,11 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
               </div>
             </div>
 
-            <div className="flex flex-col items-center bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border-2 border-purple-200 p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-2xl">🎲</span>
-                <h3 className="text-xl font-black text-gray-700">Dados</h3>
-              </div>
+      <div className="flex flex-col items-center bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border-2 border-purple-200 p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-2xl">🎲</span>
+          <h3 className="text-xl font-black text-gray-700">Dados</h3>
+        </div>
               <div className="flex gap-8 justify-center items-center p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
                 <Dado valor={dadoValores[0]} size={90} color="#f0e7ff" borderColor="#9333ea" />
                 <Dado valor={dadoValores[1]} size={90} color="#fce7ff" borderColor="#ec4899" />
@@ -364,9 +373,9 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
             </div>
           </div>
 
-          <div className="mb-6 p-4 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border-2 border-purple-200 w-full">
-            <Juego nombres={jugadores.map((j) => j.nombre)} turno={turno} onFichaSeleccionada={handleFichaSeleccionada} />
-          </div>
+        <div className="mb-6 p-4 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border-2 border-purple-200 w-full">
+          <Juego nombres={jugadores.map((j) => j.nombre)} turno={turno} gameState={gameState} onFichaSeleccionada={handleFichaSeleccionada} />
+        </div>
 
           <div className="w-full max-w-md">
             <Controls
