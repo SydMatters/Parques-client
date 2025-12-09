@@ -71,7 +71,7 @@ export function Tablero({ fichas, onFichaClick }: TableroProps) {
       <rect x="150" y="150" width="500" height="500" fill="lightblue" stroke="black" strokeWidth="2" />
       <rect x="340" y="340" width="120" height="120" fill="white" stroke="black" strokeWidth="2" />
 
-      <rect x="150" y="150" width="140" height="140" fill="#4682B4" stroke="black" strokeWidth="2" />
+      <rect x="150" y="150" width="140" height="140" fill="#87CEFA" stroke="black" strokeWidth="2" />
       <rect x="510" y="150" width="140" height="140" fill="#FF6666" stroke="black" strokeWidth="2" />
       <rect x="150" y="510" width="140" height="140" fill="#50C878" stroke="black" strokeWidth="2" />
       <rect x="510" y="510" width="140" height="140" fill="#FFFFCC" stroke="black" strokeWidth="2" />

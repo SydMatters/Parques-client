@@ -117,7 +117,7 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
       color: fallbackColors[i]?.hex || "#000",
       colorName: fallbackColors[i]?.label || "Color",
       icon: fallbackColors[i]?.icon || "🎲",
-      estado: "Pendiente",
+      estado: "Jugando",
     }));
   }, [gameState]);
   const handleLogin = (data: LoginData) => {

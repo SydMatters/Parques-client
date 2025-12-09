@@ -8,41 +8,71 @@ type JuegoProps = {
   onFichaSeleccionada: (index: number) => void;
 };
 
-const colorHex = ["#00AA00", "#0000FF", "#FFFF00", "#FF0000"];
+// Colores canónicos del tablero
+type CanonicalColor = "green" | "blue" | "yellow" | "red";
 
-const prisiones: Record<number, { x: number; y: number }[]> = {
-  0: [
-    { x: 192.5, y: 192.5 },
-    { x: 227.5, y: 192.5 },
-    { x: 192.5, y: 227.5 },
-    { x: 227.5, y: 227.5 },
+// Normaliza los nombres que vienen del backend ("azul"/"blue", etc.)
+const normalizeColor = (name?: string): CanonicalColor => {
+  const n = (name || "").toLowerCase();
+  if (n === "verde" || n === "green") return "green";
+  if (n === "azul" || n === "blue") return "blue";
+  if (n === "amarillo" || n === "yellow") return "yellow";
+  if (n === "rojo" || n === "red") return "red";
+  // por defecto, verde
+  return "green";
+};
+
+// Hex por color lógico
+const colorHex: Record<CanonicalColor, string> = {
+  green: "#50C878",
+  blue: "#4682B4",
+  yellow: "#FFFF00",
+  red: "#FF0000",
+};
+
+// Coordenadas centrales de las cárceles dentro de cada cuadrante de color
+const prisiones: Record<CanonicalColor, { x: number; y: number }[]> = {
+  // Verde (abajo izquierda) cuadrante 150-290 x 510-650
+  green: [
+    { x: 180, y: 540 },
+    { x: 225, y: 540 },
+    { x: 180, y: 585 },
+    { x: 225, y: 585 },
   ],
-  1: [
-    { x: 552.5, y: 192.5 },
-    { x: 587.5, y: 192.5 },
-    { x: 552.5, y: 227.5 },
-    { x: 587.5, y: 227.5 },
+  // Azul (arriba izquierda) cuadrante 150-290 x 150-290
+  blue: [
+    { x: 180, y: 180 },
+    { x: 225, y: 180 },
+    { x: 180, y: 225 },
+    { x: 225, y: 225 },
   ],
-  2: [
-    { x: 192.5, y: 552.5 },
-    { x: 227.5, y: 552.5 },
-    { x: 192.5, y: 587.5 },
-    { x: 227.5, y: 587.5 },
+  // Amarillo (abajo derecha) cuadrante 510-650 x 510-650
+  yellow: [
+    { x: 540, y: 540 },
+    { x: 585, y: 540 },
+    { x: 540, y: 585 },
+    { x: 585, y: 585 },
   ],
-  3: [
-    { x: 552.5, y: 552.5 },
-    { x: 587.5, y: 552.5 },
-    { x: 552.5, y: 587.5 },
-    { x: 587.5, y: 587.5 },
+  // Rojo (arriba derecha) cuadrante 510-650 x 150-290
+  red: [
+    { x: 540, y: 180 },
+    { x: 585, y: 180 },
+    { x: 540, y: 225 },
+    { x: 585, y: 225 },
   ],
 };
 
-// Mapea fila/columna del tablero lógico a coordenadas SVG sencillas
-const mapToCoords = (row: number, col: number) => {
-  const baseX = 120;
-  const baseY = 120;
-  const cell = 18;
-  return { x: baseX + col * cell, y: baseY + row * cell };
+// Mapea fila/columna del tablero lógico a coordenadas SVG
+// Tablero dibujado de 150 a 650 (500px). 24 columnas, 4 filas.
+const mapToCoords = (fila: number, columna: number) => {
+  const baseX = 150;
+  const baseY = 150;
+  const cellX = 500 / 24;
+  const cellY = 500 / 4;
+  return {
+    x: baseX + columna * cellX + cellX / 2,
+    y: baseY + fila * cellY + cellY / 2,
+  };
 };
 
 export function Juego({ nombres, turno, gameState, onFichaSeleccionada }: JuegoProps) {
@@ -50,16 +80,36 @@ export function Juego({ nombres, turno, gameState, onFichaSeleccionada }: JuegoP
 
   if (gameState?.state?.players?.length) {
     gameState.state.players.forEach((p, pIdx) => {
+      const colorKey = normalizeColor(p.color);
+      const color = colorHex[colorKey];
+      const jailSlots = prisiones[colorKey];
+
       p.tokens.forEach((t) => {
+        // index global = jugador * 4 + id de ficha (lo sigues usando en los modales)
         const index = pIdx * 4 + t.id;
+
         if (t.in_goal) {
-          fichas[index] = { x: 380 + pIdx * 8, y: 380 + t.id * 8, color: colorHex[pIdx] };
+          // Fichas en la meta (las coloco cerca del centro, pequeño offset por jugador/ficha)
+          fichas[index] = {
+            x: 380 + pIdx * 8,
+            y: 380 + t.id * 8,
+            color,
+          };
         } else if (t.in_jail) {
-          const pos = prisiones[pIdx]?.[t.id];
-          fichas[index] = { x: pos?.x ?? 50, y: pos?.y ?? 50, color: colorHex[pIdx] };
+          // Fichas en la cárcel, según color real
+          const pos = jailSlots?.[t.id];
+          fichas[index] = {
+            x: pos?.x ?? 50,
+            y: pos?.y ?? 50,
+            color,
+          };
         } else if (t.x !== null && t.y !== null) {
-          const pos = mapToCoords(t.x, t.y);
-          fichas[index] = { x: pos.x, y: pos.y, color: colorHex[pIdx] };
+          // Fichas en el camino (coordenadas lógicas que vienen del backend)
+          const pos = mapToCoords(t.y, t.x);
+          fichas[index] = { x: pos.x, y: pos.y, color };
+        } else {
+          // Estado inconsistente: no en cárcel, no en meta y sin coords;
+          // mejor no dibujar nada antes que pintarla en una salida equivocada.
         }
       });
     });
