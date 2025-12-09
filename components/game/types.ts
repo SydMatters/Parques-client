@@ -37,7 +37,7 @@ export type Player = {
   color: string;
   colorName: string;
   icon: string;
-  estado: "Jugando" | "Desconectado";
+  estado: "Jugando" | "En espera" | "Esperando inicio" | "Finalizado" | "Pendiente";
 };
 
 export type FichaInfo = {
