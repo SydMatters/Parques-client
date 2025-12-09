@@ -14,6 +14,7 @@ import { TurnModal } from "./modals/TurnModal";
 import { TurnoCompletadoModal } from "./modals/TurnoCompletadoModal";
 import { StartGameModal } from "./modals/StartGameModal";
 import type { BackendGameState, FichaInfo, LoginData, Player } from "./types";
+import { joinGame } from "@/lib/backend";
 
 const colorMap = {
   azul: { hex: "#0000FF", label: "Azul", icon: "🔵" },
@@ -106,6 +107,10 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
   const handleLogin = (data: LoginData) => {
     setLoginData(data);
     setIsLoggedIn(true);
+    joinGame(data).catch((err) => {
+      const message = err instanceof Error ? err.message : "No se pudo registrar el jugador";
+      mostrarAlerta(message);
+    });
     setTimeout(() => {
       mostrarAlerta(`¡Bienvenido ${data.username}! Esperando jugadores...`);
     }, 500);
@@ -230,9 +235,11 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
       mostrarAlerta("Se necesitan al menos 2 jugadores para iniciar");
       return;
     }
-    if (wsRef.current && connected) {
-      wsRef.current.send(JSON.stringify({ type: "start" }));
+    if (!connected || !wsRef.current) {
+      mostrarAlerta("No hay conexión con el servidor. Reintenta en unos segundos.");
+      return;
     }
+    wsRef.current.send(JSON.stringify({ type: "start" }));
   };
 
   const handleSiguienteJugador = () => {
