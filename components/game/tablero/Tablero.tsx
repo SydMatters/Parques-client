@@ -22,7 +22,50 @@ const DibujarMalla = ({ x, y, ancho, alto, filas, columnas }: { x: number; y: nu
   return <g>{lineas}</g>;
 };
 
+const CasillaEspecial = ({
+  x,
+  y,
+  ancho,
+  alto,
+  filas,
+  columnas,
+  fila,
+  columna,
+  color,
+}: {
+  x: number;
+  y: number;
+  ancho: number;
+  alto: number;
+  filas: number;
+  columnas: number;
+  fila: number;    // índice 0 = primera fila desde arriba
+  columna: number; // índice 0 = primera columna desde la izquierda
+  color: string;
+}) => {
+  const cellWidth = ancho / columnas;
+  const cellHeight = alto / filas;
+
+  return (
+    <rect
+      x={x + columna * cellWidth}
+      y={y + fila * cellHeight}
+      width={cellWidth}
+      height={cellHeight}
+      fill={color}
+      stroke="black"
+      strokeWidth={1}
+    />
+  );
+};
+
+
 export function Tablero({ fichas, onFichaClick }: TableroProps) {
+  const CAMINO_AZUL = { x: 290, y: 150, ancho: 220, alto: 140, filas: 7, columnas: 3 };
+  const CAMINO_VERDE = { x: 150, y: 290, ancho: 140, alto: 220, filas: 3, columnas: 7 };
+  const CAMINO_ROJO  = { x: 510, y: 290, ancho: 140, alto: 220, filas: 3, columnas: 7 };
+  const CAMINO_AMARILLO = { x: 290, y: 510, ancho: 220, alto: 140, filas: 7, columnas: 3 };
+  
   return (
     <svg width="800" height="800" className="border-4 border-gray-900 bg-white">
       <rect x="150" y="150" width="500" height="500" fill="lightblue" stroke="black" strokeWidth="2" />
@@ -33,16 +76,117 @@ export function Tablero({ fichas, onFichaClick }: TableroProps) {
       <rect x="150" y="510" width="140" height="140" fill="#50C878" stroke="black" strokeWidth="2" />
       <rect x="510" y="510" width="140" height="140" fill="#FFFFCC" stroke="black" strokeWidth="2" />
 
-      <polygon points="290,150 436.6,150 436.6,340 340,340 340,363.3 150,363.3 150,290 290,290" fill="#0000FF" stroke="black" strokeWidth="1" />
-      <polygon points="340,363.3 340,460 363.3,460 363.3,650 290,650 290,510 150,510 150,363.3" fill="#00AA00" stroke="black" strokeWidth="1" />
-      <polygon points="363.3,650 363.3,460 460,460 460,436.6 650,436.6 650,510 510,510 510,650" fill="#FFFF00" stroke="black" strokeWidth="1" />
-      <polygon points="460,436.6 460,340 436.6,340 436.6,150 510,150 510,290 650,290 650,436.6" fill="#FF0000" stroke="black" strokeWidth="1" />
+      <polygon points="290,150 436.6,150 436.6,340 340,340 340,363.3 150,363.3 150,290 290,290" fill="white" stroke="black" strokeWidth="1" />
+      <polygon points="340,363.3 340,460 363.3,460 363.3,650 290,650 290,510 150,510 150,363.3" fill="white" stroke="black" strokeWidth="1" />
+      <polygon points="363.3,650 363.3,460 460,460 460,436.6 650,436.6 650,510 510,510 510,650" fill="white" stroke="black" strokeWidth="1" />
+      <polygon points="460,436.6 460,340 436.6,340 436.6,150 510,150 510,290 650,290 650,436.6" fill="white" stroke="black" strokeWidth="1" />
 
-      <DibujarMalla x={290} y={150} ancho={220} alto={140} filas={7} columnas={3} />
-      <DibujarMalla x={150} y={290} ancho={140} alto={220} filas={3} columnas={7} />
-      <DibujarMalla x={510} y={290} ancho={140} alto={220} filas={3} columnas={7} />
-      <DibujarMalla x={290} y={510} ancho={220} alto={140} filas={7} columnas={3} />
+      {/*Mallas */}
+      <DibujarMalla {...CAMINO_AZUL} />
+      <DibujarMalla {...CAMINO_VERDE} />
+      <DibujarMalla {...CAMINO_ROJO} />
+      <DibujarMalla {...CAMINO_AMARILLO} />
 
+      {/* Casillas especiales AZULES */}
+
+      {/* Seguro azul (fila 0, columna 1 – ajusta si te queda corrido) */}
+      <CasillaEspecial
+        {...CAMINO_AZUL}
+        fila={0}
+        columna={1}
+        color="#0000FF"
+      />
+
+      <CasillaEspecial
+        {...CAMINO_VERDE}
+        fila={0}
+        columna={4}
+        color="#0000FF"      
+      />
+
+      {/* Salida azul (coincide con el texto SALIDA azul) */}
+      <CasillaEspecial
+        {...CAMINO_AZUL}
+        fila={4}
+        columna={0}
+        color="#0000FF"
+      />
+
+      {/* Casillas especiales VERDES */}
+
+      
+      {/* Seguro verde (fila 1, columna 2 – ajusta si te queda corrido) */}
+      <CasillaEspecial
+        {...CAMINO_VERDE}
+        fila={1}
+        columna={0}
+        color="#00AA00"      
+      />
+
+      <CasillaEspecial
+        {...CAMINO_AMARILLO}
+        fila={2}
+        columna={0}
+        color="#00AA00"
+      />
+      
+
+      {/* Salida verde (coincide con el texto SALIDA verde) */}
+      <CasillaEspecial
+        {...CAMINO_VERDE}
+        fila={2}
+        columna={4}
+        color="#00AA00"
+      />
+      
+      {/* Casillas especiales AMARILLAS */}
+      {/* Seguro amarillo (fila 2, columna 1 – ajusta si te queda corrido) */}
+      <CasillaEspecial
+        {...CAMINO_AMARILLO}
+        fila={6}
+        columna={1}
+        color="#FFFF00"
+      />
+      
+      <CasillaEspecial
+        {...CAMINO_ROJO}
+        fila={2}
+        columna={2}
+        color="#FFFF00"
+      />
+
+      {/* Salida amarilla (coincide con el texto SALIDA amarillo) */}
+      <CasillaEspecial
+        {...CAMINO_AMARILLO}
+        fila={2}
+        columna={2}
+        color="#FFFF00"
+      />
+      {/* Casillas especiales ROJAS */}
+      {/* Seguro rojo (fila 1, columna 0 – ajusta si te queda corrido) */}
+      <CasillaEspecial
+        {...CAMINO_ROJO}
+        fila={1}
+        columna={6}
+        color="#FF0000"
+      />
+      
+      <CasillaEspecial
+        {...CAMINO_AZUL}
+        fila={4}
+        columna={2}
+        color="#FF0000"
+      />
+      {/* Salida roja (coincide con el texto SALIDA rojo) */}
+      <CasillaEspecial
+        {...CAMINO_ROJO}
+        fila={0}
+        columna={2}
+        color="#FF0000"
+      />
+      
+
+      {/* Zona central detallada */}
       <line x1="363.3" y1="290" x2="363.3" y2="340" stroke="black" strokeWidth="1.5" />
       <line x1="436.6" y1="290" x2="436.6" y2="340" stroke="black" strokeWidth="1.5" />
       <line x1="363.3" y1="460" x2="363.3" y2="510" stroke="black" strokeWidth="1.5" />

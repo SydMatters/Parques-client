@@ -83,7 +83,12 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
         (!gameState && loginData)
       )
   );
-  const canRoll = isMyTurn && connected && gameState?.status === "running";
+  const jugadorActual = loginData
+    ? gameState?.state.players.find((p) => p.name === loginData.username)
+    : null;
+  const allInJail = jugadorActual ? jugadorActual.tokens.every((t) => t.in_jail) : false;
+  const attemptsLimitReached = allInJail && attemptsInTurn >= 3;
+  const canRoll = isMyTurn && connected && gameState?.status === "running" && !attemptsLimitReached;
 
   const jugadores: Player[] = useMemo(() => {
     if (gameState?.state.players?.length) {
@@ -139,18 +144,20 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
         lastTurnPlayerRef.current = state.state.turn;
         setConsecutiveDoubles(0);
         setAttemptsInTurn(0);
-        const idx = state.state.players.findIndex((p) => p.name === state.state.turn);
-        if (idx >= 0) {
-          const p = state.state.players[idx];
-          const mapped = mapColor(p.color);
-          setTurnModalPlayer({
-            nombre: p.name,
-            color: mapped.hex,
-            colorName: mapped.label,
-            icon: mapped.icon,
-            estado: "Jugando",
-          });
-          setTimeout(() => setTurnModalPlayer(null), 1400);
+        if (state.status === "running") {
+          const idx = state.state.players.findIndex((p) => p.name === state.state.turn);
+          if (idx >= 0) {
+            const p = state.state.players[idx];
+            const mapped = mapColor(p.color);
+            setTurnModalPlayer({
+              nombre: p.name,
+              color: mapped.hex,
+              colorName: mapped.label,
+              icon: mapped.icon,
+              estado: "Jugando",
+            });
+            setTimeout(() => setTurnModalPlayer(null), 1400);
+          }
         }
       }
       const idx = state.state.players.findIndex((p) => p.name === state.state.turn);
@@ -218,7 +225,7 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
   const handleTirarDado = () => {
     if (!loginData) return;
     if (!isMyTurn) {
-      mostrarAlerta("Espera tu turno antes de tirar los dados");
+      mostrarAlerta("No es tu turno aún. Espera a que el servidor te asigne el turno.");
       return;
     }
     if (wsRef.current && connected) {
@@ -372,11 +379,12 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
                   ? gameState?.status === "running"
                     ? isMyTurn
                       ? (() => {
-                          const jugador = gameState?.state.players.find((p) => p.name === loginData?.username);
-                          const enCarcel = jugador ? jugador.tokens.every((t) => t.in_jail) : false;
-                          const intentosRestantes = enCarcel ? Math.max(0, 3 - attemptsInTurn) : null;
+                          const intentosRestantes = allInJail ? Math.max(0, 3 - attemptsInTurn) : null;
                           if (consecutiveDoubles >= 2) return "Cuidado: otro doble enviará tu ficha más adelantada a la cárcel";
-                          if (enCarcel && intentosRestantes !== null) return `Intentos para salir: ${intentosRestantes}/3`;
+                          if (allInJail && intentosRestantes !== null) {
+                            if (intentosRestantes === 0) return "Se acabaron tus intentos, espera tu próximo turno";
+                            return `Intentos para salir: ${intentosRestantes}/3`;
+                          }
                           if (consecutiveDoubles === 1) return "Sacaste doble, tienes otro lanzamiento";
                           return "Es tu turno";
                         })()
