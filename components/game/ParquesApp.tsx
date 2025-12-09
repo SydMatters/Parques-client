@@ -52,6 +52,9 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
   const [turno, setTurno] = useState(0);
   const [fichaInfo, setFichaInfo] = useState<FichaInfo | null>(null);
   const [alertMessage, setAlertMessage] = useState("");
+  const consecutiveDoublesRef = useRef<number>(0);
+  const attemptsRef = useRef<number>(0);
+  const lastTurnPlayerRef = useRef<string>("");
   const [avisoInfo] = useState<{
     tipo: "info" | "alerta" | "comida";
     titulo: string;
@@ -131,12 +134,26 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
       lastStatusRef.current = state.status;
     }
     if (state.state.turn) {
+      // Reset counters when cambia de jugador
+      if (lastTurnPlayerRef.current !== state.state.turn) {
+        lastTurnPlayerRef.current = state.state.turn;
+        consecutiveDoublesRef.current = 0;
+        attemptsRef.current = 0;
+      }
       const idx = state.state.players.findIndex((p) => p.name === state.state.turn);
       setTurno(idx >= 0 ? idx : 0);
     }
     if (state.state.last_roll && state.state.last_roll.length === 2) {
       setDadoValores([state.state.last_roll[0], state.state.last_roll[1]]);
       const rollKey = state.state.last_roll.join("-");
+      // track doubles/attempts locally to ayudar en UI
+      const isDouble = state.state.last_roll[0] === state.state.last_roll[1];
+      attemptsRef.current += 1;
+      if (isDouble) {
+        consecutiveDoublesRef.current += 1;
+      } else {
+        consecutiveDoublesRef.current = 0;
+      }
       if (rollKey !== lastRollRef.current) {
         lastRollRef.current = rollKey;
         setDiceModalOpen(true);
@@ -347,7 +364,15 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
                 connected
                   ? gameState?.status === "running"
                     ? isMyTurn
-                      ? "Es tu turno"
+                      ? (() => {
+                          const jugador = gameState?.state.players.find((p) => p.name === loginData?.username);
+                          const enCarcel = jugador ? jugador.tokens.every((t) => t.in_jail) : false;
+                          const intentosRestantes = enCarcel ? Math.max(0, 3 - attemptsRef.current) : null;
+                          if (consecutiveDoublesRef.current >= 2) return "Cuidado: otro doble enviará tu ficha más adelantada a la cárcel";
+                          if (enCarcel && intentosRestantes !== null) return `Intentos para salir: ${intentosRestantes}/3`;
+                          if (consecutiveDoublesRef.current === 1) return "Sacaste doble, tienes otro lanzamiento";
+                          return "Es tu turno";
+                        })()
                       : gameState?.state.turn
                         ? `Turno de ${gameState.state.turn}`
                         : undefined
