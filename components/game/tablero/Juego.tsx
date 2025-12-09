@@ -67,18 +67,29 @@ const prisiones: Record<CanonicalColor, { x: number; y: number }[]> = {
 
 // Mapea fila/columna lógica (fila 0..3, col 0..23) a coordenadas SVG
 const mapToCoords = (fila: number, columna: number) => {
-  // fila lógica -> fila visual (0=arriba). Queremos: azul arriba izq (fila lógica 1),
-  // rojo arriba der (fila lógica 3), verde abajo izq (fila lógica 0), amarillo abajo der (fila lógica 2)
-  const rowMap = [2, 0, 3, 1];
-  const displayRow = rowMap[fila] ?? fila;
-  const baseX = 150;
-  const baseY = 150;
-  const cellX = 500 / 24;
-  const cellY = 500 / 4;
-  return {
-    x: baseX + columna * cellX + cellX / 2,
-    y: baseY + displayRow * cellY + cellY / 2,
+  // Colocamos cada color en su camino real:
+  // azul (fila lógica 1) → camino horizontal superior (CAMINO_AZUL)
+  // rojo (3) → camino vertical derecho (CAMINO_ROJO)
+  // verde (0) → camino vertical izquierdo (CAMINO_VERDE)
+  // amarillo (2) → camino horizontal inferior (CAMINO_AMARILLO)
+  const caminos = {
+    blue: { x: 290, y: 150, width: 220, height: 140, orientation: "horizontal" as const },
+    red: { x: 510, y: 290, width: 140, height: 220, orientation: "vertical" as const },
+    green: { x: 150, y: 290, width: 140, height: 220, orientation: "vertical" as const },
+    yellow: { x: 290, y: 510, width: 220, height: 140, orientation: "horizontal" as const },
   };
+  const color = fila === 1 ? "blue" : fila === 3 ? "red" : fila === 0 ? "green" : "yellow";
+  const camino = caminos[color as CanonicalColor];
+  const steps = 24;
+  if (camino.orientation === "horizontal") {
+    const stepX = camino.width / steps;
+    const y = camino.y + camino.height / 2;
+    return { x: camino.x + columna * stepX + stepX / 2, y };
+  } else {
+    const stepY = camino.height / steps;
+    const x = camino.x + camino.width / 2;
+    return { x, y: camino.y + columna * stepY + stepY / 2 };
+  }
 };
 
 export function Juego({ nombres, turno, gameState, onFichaSeleccionada }: JuegoProps) {
