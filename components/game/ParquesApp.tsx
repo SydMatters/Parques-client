@@ -56,6 +56,7 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
   const [alertMessage, setAlertMessage] = useState("");
   const [consecutiveDoubles, setConsecutiveDoubles] = useState(0);
   const [attemptsInTurn, setAttemptsInTurn] = useState(0);
+  const [rolledThisTurn, setRolledThisTurn] = useState(false);
   const lastTurnPlayerRef = useRef<string>("");
   const [avisoInfo] = useState<{
     tipo: "info" | "alerta" | "comida";
@@ -91,8 +92,8 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
     : null;
   const allInJail = jugadorActual ? jugadorActual.tokens.every((t) => t.in_jail) : false;
   const attemptsLimitReached = allInJail && attemptsInTurn >= 3;
-  // No bloqueamos el botón por intentos; el backend valida y pasa turno según reglas.
-  const canRoll = isMyTurn && connected && gameState?.status === "running" && !pendingMove;
+  // Permitimos relanzar si todas las fichas siguen en la cárcel; el backend valida turnos/reglas.
+  const canRoll = isMyTurn && connected && gameState?.status === "running" && (!pendingMove || allInJail) && !attemptsLimitReached;
 
   const jugadores: Player[] = useMemo(() => {
     if (gameState?.state.players?.length) {
@@ -141,8 +142,10 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
     setAlertModalOpen(true);
   };
 
-  const applyState = (state: BackendGameState) => {
+  const applyState = (state: BackendGameState, metaType?: string) => {
     const isMyTurnNow = Boolean(loginData && state.state.turn === loginData.username && state.status === "running");
+    const currentPlayer = state.state.players.find((p) => p.name === state.state.turn);
+    const currentPlayerAllInJail = currentPlayer?.tokens.every((t) => t.in_jail) ?? false;
     if (!isMyTurnNow) {
       setPendingMove(false);
     }
@@ -161,6 +164,8 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
         setConsecutiveDoubles(0);
         setAttemptsInTurn(0);
         setPendingMove(false);
+        setRolledThisTurn(false);
+        lastRollRef.current = "";
         if (state.status === "running") {
           const idx = state.state.players.findIndex((p) => p.name === state.state.turn);
           if (idx >= 0) {
@@ -183,20 +188,28 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
     if (state.state.last_roll && state.state.last_roll.length === 2) {
       setDadoValores([state.state.last_roll[0], state.state.last_roll[1]]);
       const rollKey = state.state.last_roll.join("-");
-      if (rollKey !== lastRollRef.current) {
-        lastRollRef.current = rollKey;
+      const rollSignature = `${state.state.turn || ""}-${rollKey}`;
+      const isRollMessage = metaType === "rolled";
+      if (isRollMessage && rollSignature !== lastRollRef.current) {
+        lastRollRef.current = rollSignature;
+        setRolledThisTurn(isMyTurnNow);
         // track doubles/attempts locally to ayudar en UI solo si es nueva tirada
         const isDouble = state.state.last_roll[0] === state.state.last_roll[1];
         setAttemptsInTurn((prev) => prev + 1);
         setConsecutiveDoubles((prev) => (isDouble ? prev + 1 : 0));
         if (isMyTurnNow) {
-          setPendingMove(true);
+          setPendingMove(!currentPlayerAllInJail);
         }
         setDiceModalOpen(true);
         setTimeout(() => setDiceModalOpen(false), 800);
       }
     } else {
       setPendingMove(false);
+    }
+    // Si es mi turno pero no llegó un evento de tirada, habilita el botón para no quedar bloqueado.
+    if (isMyTurnNow && metaType !== "rolled" && !state.state.last_roll) {
+      setPendingMove(false);
+      setRolledThisTurn(false);
     }
   };
 
@@ -223,11 +236,11 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
           const payload = JSON.parse(event.data);
           const statePayload: BackendGameState | undefined = payload.state;
           if (payload.type === "state" && statePayload) {
-            applyState(statePayload);
+            applyState(statePayload, payload.type);
           } else if (payload.type === "joined" && statePayload) {
-            applyState(statePayload);
+            applyState(statePayload, payload.type);
           } else if (payload.type === "rolled" && statePayload) {
-            applyState(statePayload);
+            applyState(statePayload, payload.type);
           } else if (payload.type === "error") {
             mostrarAlerta(payload.message || "Error de servidor");
           }
@@ -254,19 +267,28 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
       mostrarAlerta("No es tu turno aún. Espera a que el servidor te asigne el turno.");
       return;
     }
-    if (pendingMove) {
+    if (attemptsLimitReached) {
+      mostrarAlerta("Se acabaron tus intentos en la cárcel. Espera tu próximo turno.");
+      return;
+    }
+    if (pendingMove && !allInJail) {
       mostrarAlerta("Ya tienes una tirada pendiente, mueve una ficha antes de volver a lanzar.");
       return;
     }
+    setRolledThisTurn(false);
     if (wsRef.current && connected) {
       wsRef.current.send(JSON.stringify({ type: "roll" }));
       if (isMyTurn) {
-        setPendingMove(true);
+        setPendingMove(!allInJail);
       }
     }
   };
 
   const handleFichaSeleccionada = (index: number) => {
+    if (!rolledThisTurn) {
+      mostrarAlerta("Primero debes lanzar los dados en este turno.");
+      return;
+    }
     const jugadorIndex = Math.floor(index / 4);
     const jugador = jugadores[jugadorIndex];
     setFichaInfo({
@@ -296,10 +318,16 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
       setConfirmModalOpen(false);
       return;
     }
+    if (!rolledThisTurn) {
+      mostrarAlerta("Primero debes lanzar los dados en este turno.");
+      setConfirmModalOpen(false);
+      return;
+    }
     const steps = stepsOverride ?? gameState?.state.last_roll?.reduce((a, b) => a + b, 0);
     if (wsRef.current && connected) {
       wsRef.current.send(JSON.stringify({ type: "move", token_id: fichaInfo.id % 4, steps }));
       setPendingMove(false);
+      setRolledThisTurn(false);
     }
     setConfirmModalOpen(false);
   };
