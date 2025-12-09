@@ -65,29 +65,28 @@ const prisiones: Record<CanonicalColor, { x: number; y: number }[]> = {
   ],
 };
 
-// Mapea fila/columna lógica (fila 0..3, col 0..23) a coordenadas SVG
+// Mapea fila/columna lógica (fila=color 0..3, col=0..23) a coordenadas SVG usando los caminos y salidas reales
 const mapToCoords = (fila: number, columna: number) => {
-  // Colocamos cada color en su camino real:
-  // azul (fila lógica 1) → camino horizontal superior (CAMINO_AZUL)
-  // rojo (3) → camino vertical derecho (CAMINO_ROJO)
-  // verde (0) → camino vertical izquierdo (CAMINO_VERDE)
-  // amarillo (2) → camino horizontal inferior (CAMINO_AMARILLO)
   const caminos = {
-    blue: { x: 290, y: 150, width: 220, height: 140, orientation: "horizontal" as const },
-    red: { x: 510, y: 290, width: 140, height: 220, orientation: "vertical" as const },
-    green: { x: 150, y: 290, width: 140, height: 220, orientation: "vertical" as const },
-    yellow: { x: 290, y: 510, width: 220, height: 140, orientation: "horizontal" as const },
+    blue: { x: 290, y: 150, width: 220, height: 140, rows: 7, cols: 3, orientation: "horizontal" as const, salidaRow: 4 },
+    red: { x: 510, y: 290, width: 140, height: 220, rows: 3, cols: 7, orientation: "vertical" as const, salidaCol: 2 },
+    green: { x: 150, y: 290, width: 140, height: 220, rows: 3, cols: 7, orientation: "vertical" as const, salidaCol: 4 },
+    yellow: { x: 290, y: 510, width: 220, height: 140, rows: 7, cols: 3, orientation: "horizontal" as const, salidaRow: 2 },
   };
   const color = fila === 1 ? "blue" : fila === 3 ? "red" : fila === 0 ? "green" : "yellow";
   const camino = caminos[color as CanonicalColor];
+  if (!camino) return { x: 0, y: 0 };
+
   const steps = 24;
   if (camino.orientation === "horizontal") {
     const stepX = camino.width / steps;
-    const y = camino.y + camino.height / 2;
+    const cellY = camino.height / camino.rows;
+    const y = camino.y + (camino.salidaRow + 0.5) * cellY;
     return { x: camino.x + columna * stepX + stepX / 2, y };
   } else {
     const stepY = camino.height / steps;
-    const x = camino.x + camino.width / 2;
+    const cellX = camino.width / camino.cols;
+    const x = camino.x + (camino.salidaCol + 0.5) * cellX;
     return { x, y: camino.y + columna * stepY + stepY / 2 };
   }
 };

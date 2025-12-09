@@ -48,6 +48,7 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
   const [turnoCompletadoModalOpen, setTurnoCompletadoModalOpen] = useState(false);
   const [avisoModalOpen, setAvisoModalOpen] = useState(false);
   const [alertModalOpen, setAlertModalOpen] = useState(false);
+  const [preStartModal, setPreStartModal] = useState(false);
   const [turnModalPlayer, setTurnModalPlayer] = useState<Player | null>(null);
   const [turno, setTurno] = useState(0);
   const [fichaInfo, setFichaInfo] = useState<FichaInfo | null>(null);
@@ -234,6 +235,10 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
 
   const handleTirarDado = () => {
     if (!loginData) return;
+    if (gameState?.status !== "running") {
+      setPreStartModal(true);
+      return;
+    }
     if (!isMyTurn) {
       mostrarAlerta("No es tu turno aún. Espera a que el servidor te asigne el turno.");
       return;
@@ -438,6 +443,12 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
       {turnModalPlayer && <TurnModal nombre={turnModalPlayer.nombre} colorName={turnModalPlayer.colorName} color={turnModalPlayer.color} />}
       {avisoModalOpen && <ModalAviso tipo={avisoInfo.tipo} titulo={avisoInfo.titulo} mensaje={avisoInfo.mensaje} jugador={avisoInfo.jugador || undefined} fichaComida={avisoInfo.fichaComida || undefined} onClose={handleCerrarAviso} />}
       {alertModalOpen && <AlertModal mensaje={alertMessage} onClose={handleCerrarAlerta} />}
+      {preStartModal && (
+        <AlertModal
+          mensaje="La partida aún no ha iniciado. Espera a que el anfitrión la inicie para poder lanzar los dados."
+          onClose={() => setPreStartModal(false)}
+        />
+      )}
       {startModalOpen && <StartGameModal players={jugadores.map((j) => j.nombre)} />}
     </div>
   );
