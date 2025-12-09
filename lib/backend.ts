@@ -25,6 +25,22 @@ export async function joinGame(data: LoginData) {
   return res.json();
 }
 
+export async function startGame(player: string) {
+  const res = await fetch(`${API_BASE}/games/start`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ player }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const detail = body?.detail || "No se pudo iniciar la partida";
+    throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
+  }
+  return body;
+}
+
 export async function enviarTablero(): Promise<BackendResponse> {
   console.log("Enviando movimiento al backend...");
   console.log("Tablero serializado como JSON...");

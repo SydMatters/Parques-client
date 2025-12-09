@@ -14,6 +14,7 @@ import { TurnModal } from "./modals/TurnModal";
 import { TurnoCompletadoModal } from "./modals/TurnoCompletadoModal";
 import { StartGameModal } from "./modals/StartGameModal";
 import type { BackendGameState, FichaInfo, LoginData, Player } from "./types";
+import { startGame } from "@/lib/backend";
 
 const colorMap = {
   azul: { hex: "#0000FF", label: "Azul", icon: "🔵" },
@@ -233,6 +234,10 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
     if (wsRef.current && connected) {
       wsRef.current.send(JSON.stringify({ type: "start" }));
     }
+    startGame(loginData.username).catch((err) => {
+      const message = err instanceof Error ? err.message : "No se pudo iniciar la partida";
+      mostrarAlerta(message);
+    });
   };
 
   const handleSiguienteJugador = () => {
