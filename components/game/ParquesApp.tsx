@@ -51,6 +51,7 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
   const [turnModalPlayer, setTurnModalPlayer] = useState<Player | null>(null);
   const [turno, setTurno] = useState(0);
   const [fichaInfo, setFichaInfo] = useState<FichaInfo | null>(null);
+  const [moveOptions, setMoveOptions] = useState<{ label: string; value?: number }[]>([]);
   const [alertMessage, setAlertMessage] = useState("");
   const [consecutiveDoubles, setConsecutiveDoubles] = useState(0);
   const [attemptsInTurn, setAttemptsInTurn] = useState(0);
@@ -250,17 +251,28 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
       colorName: jugador.colorName,
       jugadorNombre: jugador.nombre,
     });
+    if (gameState?.state.last_roll && gameState.state.last_roll.length === 2) {
+      const [d1, d2] = gameState.state.last_roll;
+      const opts = [
+        { label: `Mover con dado 1 (${d1})`, value: d1 },
+        { label: `Mover con dado 2 (${d2})`, value: d2 },
+        { label: `Mover con ambos (${d1 + d2})`, value: d1 + d2 },
+      ];
+      setMoveOptions(opts);
+    } else {
+      setMoveOptions([]);
+    }
     setConfirmModalOpen(true);
   };
 
-  const handleConfirmMovimiento = async () => {
+  const handleConfirmMovimiento = async (stepsOverride?: number) => {
     if (!loginData || !fichaInfo) return;
     if (!isMyTurn) {
       mostrarAlerta("Solo puedes mover durante tu turno");
       setConfirmModalOpen(false);
       return;
     }
-    const steps = gameState?.state.last_roll?.reduce((a, b) => a + b, 0);
+    const steps = stepsOverride ?? gameState?.state.last_roll?.reduce((a, b) => a + b, 0);
     if (wsRef.current && connected) {
       wsRef.current.send(JSON.stringify({ type: "move", token_id: fichaInfo.id % 4, steps }));
     }
@@ -413,7 +425,13 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
 
       {diceModalOpen && <DiceModal valores={dadoValores} />}
       {confirmModalOpen && fichaInfo && (
-        <ConfirmModal mensaje={`¿Mover ficha ${fichaInfo.id + 1} (${fichaInfo.colorName})?`} fichaInfo={fichaInfo} onConfirm={handleConfirmMovimiento} onCancel={() => setConfirmModalOpen(false)} />
+        <ConfirmModal
+          mensaje={`¿Mover ficha ${fichaInfo.id + 1} (${fichaInfo.colorName})?`}
+          fichaInfo={fichaInfo}
+          options={moveOptions}
+          onConfirm={handleConfirmMovimiento}
+          onCancel={() => setConfirmModalOpen(false)}
+        />
       )}
       {turnoCompletadoModalOpen && <TurnoCompletadoModal jugadorActual={jugadores[turno]} onSiguienteJugador={handleSiguienteJugador} onCerrar={handleCerrarTurnoCompletado} />}
       {turnModalPlayer && <TurnModal nombre={turnModalPlayer.nombre} colorName={turnModalPlayer.colorName} color={turnModalPlayer.color} />}

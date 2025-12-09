@@ -1,3 +1,5 @@
+type ConfirmOption = { label: string; value?: number };
+
 type ConfirmModalProps = {
   mensaje: string;
   fichaInfo: {
@@ -5,11 +7,12 @@ type ConfirmModalProps = {
     color: string;
     colorName: string;
   };
-  onConfirm: () => void;
+  onConfirm: (value?: number) => void;
   onCancel: () => void;
+  options?: ConfirmOption[];
 };
 
-export function ConfirmModal({ mensaje, fichaInfo, onConfirm, onCancel }: ConfirmModalProps) {
+export function ConfirmModal({ mensaje, fichaInfo, onConfirm, onCancel, options }: ConfirmModalProps) {
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 animate-fadeIn">
       <div className="bg-white/95 backdrop-blur-xl p-8 rounded-3xl shadow-2xl w-[450px] text-center border-2 border-purple-200 transform animate-scaleIn">
@@ -36,27 +39,49 @@ export function ConfirmModal({ mensaje, fichaInfo, onConfirm, onCancel }: Confir
 
         <p className="text-lg font-semibold text-gray-700 mb-8">{mensaje}</p>
 
-        <div className="flex gap-4">
-          <button
-            onClick={onConfirm}
-            type="button"
-            className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-2xl font-black text-lg shadow-lg hover:shadow-green-500/50 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2"
-          >
-            <span className="text-2xl">✓</span>
-            Confirmar
-          </button>
-          <button
-            onClick={onCancel}
-            type="button"
-            className="flex-1 bg-gradient-to-r from-red-500 to-pink-600 text-white py-4 rounded-2xl font-black text-lg shadow-lg hover:shadow-red-500/50 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2"
-          >
-            <span className="text-2xl">✕</span>
-            Cancelar
-          </button>
-        </div>
+        {options && options.length > 0 ? (
+          <div className="flex flex-col gap-3">
+            {options.map((opt) => (
+              <button
+                key={opt.label}
+                onClick={() => onConfirm(opt.value)}
+                type="button"
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-4 rounded-2xl font-black text-lg shadow-lg hover:shadow-purple-500/50 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2"
+              >
+                {opt.label}
+              </button>
+            ))}
+            <button
+              onClick={onCancel}
+              type="button"
+              className="w-full bg-gradient-to-r from-red-500 to-pink-600 text-white py-4 rounded-2xl font-black text-lg shadow-lg hover:shadow-red-500/50 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2"
+            >
+              ✕ Cancelar
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-4">
+            <button
+              onClick={() => onConfirm()}
+              type="button"
+              className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-2xl font-black text-lg shadow-lg hover:shadow-green-500/50 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2"
+            >
+              <span className="text-2xl">✓</span>
+              Confirmar
+            </button>
+            <button
+              onClick={onCancel}
+              type="button"
+              className="flex-1 bg-gradient-to-r from-red-500 to-pink-600 text-white py-4 rounded-2xl font-black text-lg shadow-lg hover:shadow-red-500/50 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2"
+            >
+              <span className="text-2xl">✕</span>
+              Cancelar
+            </button>
+          </div>
+        )}
 
         <div className="mt-6 px-4 py-2 bg-blue-50 rounded-xl">
-          <p className="text-xs text-blue-700 font-semibold">🔄 El backend procesará este movimiento</p>
+          <p className="text-xs text-blue-700 font-semibold">🔄 El backend validará el movimiento</p>
         </div>
       </div>
 
