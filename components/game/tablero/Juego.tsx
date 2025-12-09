@@ -29,12 +29,12 @@ const colorHex: Record<CanonicalColor, string> = {
   red: "#FF0000",
 };
 
-// Fila lógica “asociada” a cada color para la salida por defecto
-const colorRow: Record<CanonicalColor, number> = {
-  green: 3,   // carril inferior
-  blue: 0,    // carril superior
-  yellow: 2,  // carril inferior lado derecho
-  red: 1,     // carril superior lado derecho
+// Índice de fila lógica según backend (COLORS: verde=0, azul=1, amarillo=2, rojo=3)
+const colorIndex: Record<CanonicalColor, number> = {
+  green: 0,
+  blue: 1,
+  yellow: 2,
+  red: 3,
 };
 
 // Coordenadas centrales de las cárceles dentro de cada cuadrante de color
@@ -65,30 +65,38 @@ const prisiones: Record<CanonicalColor, { x: number; y: number }[]> = {
   ],
 };
 
-// Mapea fila/columna lógica (fila=color 0..3, col=0..23) a coordenadas SVG usando los caminos y salidas reales
+// Mapea fila/columna lógica (fila=color 0..3, col=0..23) a coordenadas SVG usando
+// las mismas medidas que Tablero.tsx. El tablero del backend es una banda lineal
+// de 24 casillas por color; aquí proyectamos esa banda sobre la línea central de
+// cada camino coloreado.
 const mapToCoords = (fila: number, columna: number) => {
-  const caminos = {
-    blue: { x: 290, y: 150, width: 220, height: 140, rows: 7, cols: 3, orientation: "horizontal" as const, salidaRow: 4 },
-    red: { x: 510, y: 290, width: 140, height: 220, rows: 3, cols: 7, orientation: "vertical" as const, salidaCol: 2 },
-    green: { x: 150, y: 290, width: 140, height: 220, rows: 3, cols: 7, orientation: "vertical" as const, salidaCol: 4 },
-    yellow: { x: 290, y: 510, width: 220, height: 140, rows: 7, cols: 3, orientation: "horizontal" as const, salidaRow: 2 },
+  const TRACKS: Record<number, { x: number; y: number; width: number; height: number; rows: number; cols: number }> = {
+    // Misma geometría declarada en Tablero.tsx
+    1: { x: 290, y: 150, width: 220, height: 140, rows: 7, cols: 3 }, // azul
+    0: { x: 150, y: 290, width: 140, height: 220, rows: 3, cols: 7 }, // verde
+    3: { x: 510, y: 290, width: 140, height: 220, rows: 3, cols: 7 }, // rojo
+    2: { x: 290, y: 510, width: 220, height: 140, rows: 7, cols: 3 }, // amarillo
   };
-  const color = fila === 1 ? "blue" : fila === 3 ? "red" : fila === 0 ? "green" : "yellow";
-  const camino = caminos[color as CanonicalColor];
-  if (!camino) return { x: 0, y: 0 };
 
-  const steps = 24;
-  if (camino.orientation === "horizontal") {
-    const stepX = camino.width / steps;
-    const cellY = camino.height / camino.rows;
-    const y = camino.y + (camino.salidaRow + 0.5) * cellY;
-    return { x: camino.x + columna * stepX + stepX / 2, y };
-  } else {
-    const stepY = camino.height / steps;
-    const cellX = camino.width / camino.cols;
-    const x = camino.x + (camino.salidaCol + 0.5) * cellX;
-    return { x, y: camino.y + columna * stepY + stepY / 2 };
+  const track = TRACKS[fila];
+  if (!track) return { x: 0, y: 0 };
+
+  const isHorizontal = track.width >= track.height;
+  const steps = 24; // columnas del backend
+
+  if (isHorizontal) {
+    const stepX = track.width / steps;
+    const cellHeight = track.height / track.rows;
+    const midRow = Math.floor(track.rows / 2);
+    const y = track.y + midRow * cellHeight + cellHeight / 2;
+    return { x: track.x + columna * stepX + stepX / 2, y };
   }
+
+  const stepY = track.height / steps;
+  const cellWidth = track.width / track.cols;
+  const midCol = Math.floor(track.cols / 2);
+  const x = track.x + midCol * cellWidth + cellWidth / 2;
+  return { x, y: track.y + columna * stepY + stepY / 2 };
 };
 
 export function Juego({ nombres, turno, gameState, onFichaSeleccionada }: JuegoProps) {
@@ -119,12 +127,12 @@ export function Juego({ nombres, turno, gameState, onFichaSeleccionada }: JuegoP
             color,
           };
         } else if (t.x !== null && t.y !== null) {
-          // Backend: x = columna (0..23), y = fila (0..3)
-          const pos = mapToCoords(t.y, t.x);
+          // Backend: x = fila(color 0..3), y = columna (0..23)
+          const pos = mapToCoords(t.x, t.y);
           fichas[index] = { x: pos.x, y: pos.y, color };
         } else {
           // Ficha ya salió pero no tiene coords aún: mostrarla en su salida
-          const fila = colorRow[colorKey];
+          const fila = colorIndex[colorKey];
           const columnaSalida = 4; // ajusta por color si quieres afinar
           const pos = mapToCoords(fila, columnaSalida);
           fichas[index] = { x: pos.x, y: pos.y, color };

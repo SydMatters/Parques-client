@@ -75,6 +75,7 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
   const wsRef = useRef<WebSocket | null>(null);
   const [connected, setConnected] = useState(false);
   const [startModalOpen, setStartModalOpen] = useState(false);
+  const [pendingMove, setPendingMove] = useState(false);
   const lastStatusRef = useRef<string>("");
   const isMyTurn = loginData && gameState?.state.turn === loginData.username && gameState?.status === "running";
   const isHost = Boolean(
@@ -91,7 +92,7 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
   const allInJail = jugadorActual ? jugadorActual.tokens.every((t) => t.in_jail) : false;
   const attemptsLimitReached = allInJail && attemptsInTurn >= 3;
   // No bloqueamos el botón por intentos; el backend valida y pasa turno según reglas.
-  const canRoll = isMyTurn && connected && gameState?.status === "running";
+  const canRoll = isMyTurn && connected && gameState?.status === "running" && !pendingMove;
 
   const jugadores: Player[] = useMemo(() => {
     if (gameState?.state.players?.length) {
@@ -141,6 +142,10 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
   };
 
   const applyState = (state: BackendGameState) => {
+    const isMyTurnNow = Boolean(loginData && state.state.turn === loginData.username && state.status === "running");
+    if (!isMyTurnNow) {
+      setPendingMove(false);
+    }
     setGameState(state);
     if (state.status !== lastStatusRef.current) {
       if (state.status === "running") {
@@ -155,6 +160,7 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
         lastTurnPlayerRef.current = state.state.turn;
         setConsecutiveDoubles(0);
         setAttemptsInTurn(0);
+        setPendingMove(false);
         if (state.status === "running") {
           const idx = state.state.players.findIndex((p) => p.name === state.state.turn);
           if (idx >= 0) {
@@ -183,9 +189,14 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
         const isDouble = state.state.last_roll[0] === state.state.last_roll[1];
         setAttemptsInTurn((prev) => prev + 1);
         setConsecutiveDoubles((prev) => (isDouble ? prev + 1 : 0));
+        if (isMyTurnNow) {
+          setPendingMove(true);
+        }
         setDiceModalOpen(true);
         setTimeout(() => setDiceModalOpen(false), 800);
       }
+    } else {
+      setPendingMove(false);
     }
   };
 
@@ -243,8 +254,15 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
       mostrarAlerta("No es tu turno aún. Espera a que el servidor te asigne el turno.");
       return;
     }
+    if (pendingMove) {
+      mostrarAlerta("Ya tienes una tirada pendiente, mueve una ficha antes de volver a lanzar.");
+      return;
+    }
     if (wsRef.current && connected) {
       wsRef.current.send(JSON.stringify({ type: "roll" }));
+      if (isMyTurn) {
+        setPendingMove(true);
+      }
     }
   };
 
@@ -281,6 +299,7 @@ export function ParquesApp({ initialLoginData = null }: ParquesAppProps) {
     const steps = stepsOverride ?? gameState?.state.last_roll?.reduce((a, b) => a + b, 0);
     if (wsRef.current && connected) {
       wsRef.current.send(JSON.stringify({ type: "move", token_id: fichaInfo.id % 4, steps }));
+      setPendingMove(false);
     }
     setConfirmModalOpen(false);
   };

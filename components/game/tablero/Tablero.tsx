@@ -70,12 +70,12 @@ export function Tablero({ fichas, onFichaClick }: TableroProps) {
     <svg width="800" height="800" className="border-4 border-gray-900 bg-white">
       <rect x="150" y="150" width="500" height="500" fill="lightblue" stroke="black" strokeWidth="2" />
       <rect x="340" y="340" width="120" height="120" fill="white" stroke="black" strokeWidth="2" />
-
+      {/*Azul, Rojo, Verde, Amarillo */}
       <rect x="150" y="150" width="140" height="140" fill="#87CEFA" stroke="black" strokeWidth="2" />
       <rect x="510" y="150" width="140" height="140" fill="#FF6666" stroke="black" strokeWidth="2" />
       <rect x="150" y="510" width="140" height="140" fill="#50C878" stroke="black" strokeWidth="2" />
       <rect x="510" y="510" width="140" height="140" fill="#FFFFCC" stroke="black" strokeWidth="2" />
-
+      {/* Zona central dividida */}
       <polygon points="290,150 436.6,150 436.6,340 340,340 340,363.3 150,363.3 150,290 290,290" fill="white" stroke="black" strokeWidth="1" />
       <polygon points="340,363.3 340,460 363.3,460 363.3,650 290,650 290,510 150,510 150,363.3" fill="white" stroke="black" strokeWidth="1" />
       <polygon points="363.3,650 363.3,460 460,460 460,436.6 650,436.6 650,510 510,510 510,650" fill="white" stroke="black" strokeWidth="1" />
@@ -202,6 +202,7 @@ export function Tablero({ fichas, onFichaClick }: TableroProps) {
       <line x1="290" y1="510" x2="340" y2="460" stroke="black" strokeWidth="1.5" />
       <line x1="460" y1="460" x2="510" y2="510" stroke="black" strokeWidth="1.5" />
 
+      {/* Zona central dividida */}
       <polygon points="340,340 400,400 460,340" fill="#0000FF" stroke="black" strokeWidth="1.5" />
       <polygon points="340,340 400,400 340,460" fill="#00AA00" stroke="black" strokeWidth="1.5" />
       <polygon points="340,460 400,400 460,460" fill="#FFFF00" stroke="black" strokeWidth="1.5" />
@@ -211,41 +212,41 @@ export function Tablero({ fichas, onFichaClick }: TableroProps) {
       <line x1="340" y1="460" x2="460" y2="340" stroke="black" strokeWidth="1" strokeDasharray="5,5" />
       <circle cx="400" cy="400" r="4" fill="black" />
 
-      <text x="322" y="244" fontSize="10" fill="black" fontWeight="bold" textAnchor="middle">
+      <text x="325" y="244" fontSize="10" fill="black" fontWeight="bold" textAnchor="middle">
         SALIDA
       </text>
-      <text x="580" y="353" fontSize="10" fill="black" fontWeight="bold" textAnchor="middle" transform="rotate(90 580 333)">
+      <text x="574" y="356" fontSize="10" fill="black" fontWeight="bold" textAnchor="middle" transform="rotate(90 580 333)">
         SALIDA
       </text>
-      <text x="230" y="479" fontSize="10" fill="black" fontWeight="bold" textAnchor="middle" transform="rotate(270 240 479)">
+      <text x="245" y="482" fontSize="10" fill="black" fontWeight="bold" textAnchor="middle" transform="rotate(270 240 479)">
         SALIDA
       </text>
-      <text x="478" y="555" fontSize="10" fill="black" fontWeight="bold" textAnchor="middle">
+      <text x="473" y="563" fontSize="10" fill="black" fontWeight="bold" textAnchor="middle">
         SALIDA
       </text>
 
       <text x="400" y="163" fontSize="9" fill="black" fontWeight="bold" textAnchor="middle">
         SEGURO
       </text>
-      <text x="580" y="499" fontSize="9" fill="black" fontWeight="bold" textAnchor="middle" transform="rotate(90 580 479)">
+      <text x="574" y="502" fontSize="9" fill="black" fontWeight="bold" textAnchor="middle" transform="rotate(90 580 479)">
         SEGURO
       </text>
-      <text x="645" y="403" fontSize="9" fill="black" fontWeight="bold" textAnchor="middle" transform="rotate(90 645 403)">
+      <text x="641" y="411" fontSize="9" fill="black" fontWeight="bold" textAnchor="middle" transform="rotate(90 645 403)">
         SEGURO
       </text>
-      <text x="220" y="353" fontSize="9" fill="black" fontWeight="bold" textAnchor="middle" transform="rotate(270 220 333)">
+      <text x="228" y="355" fontSize="9" fill="black" fontWeight="bold" textAnchor="middle" transform="rotate(270 220 333)">
         SEGURO
       </text>
-      <text x="155" y="403" fontSize="9" fill="black" fontWeight="bold" textAnchor="middle" transform="rotate(270 155 403)">
+      <text x="160" y="411" fontSize="9" fill="black" fontWeight="bold" textAnchor="middle" transform="rotate(270 155 403)">
         SEGURO
       </text>
-      <text x="400" y="637" fontSize="9" fill="black" fontWeight="bold" textAnchor="middle">
+      <text x="400" y="644" fontSize="9" fill="black" fontWeight="bold" textAnchor="middle">
         SEGURO
       </text>
-      <text x="330" y="555" fontSize="9" fill="black" fontWeight="bold" textAnchor="middle">
+      <text x="325" y="562" fontSize="9" fill="black" fontWeight="bold" textAnchor="middle">
         SEGURO
       </text>
-      <text x="478" y="243" fontSize="9" fill="black" fontWeight="bold" textAnchor="middle">
+      <text x="474" y="243" fontSize="9" fill="black" fontWeight="bold" textAnchor="middle">
         SEGURO
       </text>
 
